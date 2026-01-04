@@ -27,7 +27,7 @@ func setup() *handler.EventHandler {
 }
 
 func TestCreateEvent_Returns201AndID(t *testing.T) {
-	json := `{"text": "test event", "date": "2025-01-01"}`
+	json := `{"photo": "1", "text": "test event", "date": "2025-01-01"}`
 	r := httptest.NewRequest("POST", "/events", bytes.NewBuffer([]byte(json)))
 	w := httptest.NewRecorder()
 
@@ -65,6 +65,21 @@ func TestEventHandler_Create_EmptyText_Returns400(t *testing.T) {
 
 	assert.Equal(t, 400, w.Result().StatusCode)
 	assert.Equal(t, string(body), service.ErrEmptyText.Error()+"\n")
+}
+
+func TestEventHandler_Create_EmptyPhoto_Returns400(t *testing.T) {
+	json := `{"photo":"", "text": "some text", "date": "2025-01-01"}`
+	r := httptest.NewRequest("POST", "/events", bytes.NewBuffer([]byte(json)))
+	w := httptest.NewRecorder()
+
+	eventHandler := setup()
+	eventHandler.Create(w, r)
+
+	resp := w.Result()
+	body, _ := io.ReadAll(resp.Body)
+
+	assert.Equal(t, 400, w.Result().StatusCode)
+	assert.Equal(t, string(body), service.ErrEmptyPhoto.Error()+"\n")
 }
 
 func TestEventHandler_Create_InvalidJSON_Returns400(t *testing.T) {

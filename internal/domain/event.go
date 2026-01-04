@@ -1,8 +1,9 @@
 package domain
 
 type Event struct {
-	Text string `json:"text"`
-	Date string `json:"date"`
+	PhotoId string `json:"photo"`
+	Text    string `json:"text"`
+	Date    string `json:"date"`
 }
 
 type EventRepository interface {
