@@ -27,7 +27,7 @@ func (h *EventHandler) Create(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	defer r.Body.Close()
 	if err := decoder.Decode(&event); err != nil {
-		http.Error(w, "invalid json", http.StatusBadRequest)
+		http.Error(w, "Invalid json", http.StatusBadRequest)
 		return
 	}
 
@@ -37,6 +37,18 @@ func (h *EventHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	eventResponse := EventResponse{
+		ID:      id,
+		PhotoId: event.PhotoId,
+		Text:    event.Text,
+		Date:    event.Date,
+	}
+
+	jsonResponse, err := json.Marshal(eventResponse)
+	if err != nil {
+		http.Error(w, "Failed to convert response to json format", http.StatusInternalServerError)
+	}
+
 	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(id))
+	w.Write(jsonResponse)
 }

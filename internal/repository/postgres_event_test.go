@@ -27,7 +27,8 @@ func prepareSchema(t *testing.T, db *sql.DB) {
 		CREATE TABLE IF NOT EXISTS events (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			text TEXT NOT NULL,
-			date TEXT NOT NULL
+			date TEXT NOT NULL,
+			photo TEXT NOT NULL
 		)
 	`)
 	if err != nil {
@@ -65,8 +66,9 @@ func TestPostgresEventRepository_Create(t *testing.T) {
 	repo := repository.NewPostgresEventRepository(db)
 
 	event := domain.Event{
-		Text: "test event",
-		Date: "2025-01-01",
+		PhotoId: "1",
+		Text:    "test event",
+		Date:    "2025-01-01",
 	}
 
 	id, err := repo.Create(event)

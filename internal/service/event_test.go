@@ -9,7 +9,7 @@ import (
 	"github.com/week-book/affiche-api/internal/service"
 )
 
-func setup() *service.EventService {
+func setup() (*service.EventService, domain.Event) {
 	repo := &repositorytest.EventRepository{
 		CreateFunc: func(event domain.Event) (string, error) {
 			return "test-id", nil
@@ -18,24 +18,36 @@ func setup() *service.EventService {
 
 	svc := service.NewEventService(repo)
 
-	return svc
+	domainEvent := domain.Event{
+		PhotoId: "1",
+		Text:    "test event",
+		Date:    "2025-01-01",
+	}
+	return svc, domainEvent
 }
 
 func TestEventService_Create_ReturnsID(t *testing.T) {
-	svc := setup()
+	svc, de := setup()
 
-	id, err := svc.Create(domain.Event{
-		Text: "test event",
-		Date: "2025-01-01",
-	})
+	id, err := svc.Create(de)
 
 	assert.NoError(t, err)
 	assert.NotEmpty(t, id)
 }
 
 func TestEventService_Create_EmptyText_ReturnsError(t *testing.T) {
-	svc := setup()
-	_, err := svc.Create(domain.Event{Text: ""})
+	svc, de := setup()
+
+	de.Text = ""
+	_, err := svc.Create(de)
 
 	assert.ErrorIs(t, err, service.ErrEmptyText)
+}
+
+func TestEventService_Create_EmptyPhoto_ReturnsError(t *testing.T) {
+	svc, de := setup()
+	de.PhotoId = ""
+	_, err := svc.Create(de)
+
+	assert.ErrorIs(t, err, service.ErrEmptyPhoto)
 }

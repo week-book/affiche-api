@@ -2,6 +2,7 @@ package handler_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"net/http/httptest"
 	"testing"
@@ -27,19 +28,31 @@ func setup() *handler.EventHandler {
 }
 
 func TestCreateEvent_Returns201AndID(t *testing.T) {
-	json := `{"text": "test event", "date": "2025-01-01"}`
-	r := httptest.NewRequest("POST", "/events", bytes.NewBuffer([]byte(json)))
+	testJson := `{"photo": "1", "text": "test event", "date": "2025-01-01"}`
+	r := httptest.NewRequest("POST", "/events", bytes.NewBuffer([]byte(testJson)))
 	w := httptest.NewRecorder()
 
 	eventHandler := setup()
 	eventHandler.Create(w, r)
 
 	resp := w.Result()
-	body, _ := io.ReadAll(resp.Body)
 	respCode := resp.StatusCode
 
+	event := handler.EventResponse{}
+	decoder := json.NewDecoder(resp.Body)
+	defer resp.Body.Close()
+	if err := decoder.Decode(&event); err != nil {
+		t.Errorf("Invalid json")
+		return
+	}
+
 	assert.Equal(t, 201, respCode)
-	assert.Contains(t, string(body), "id")
+
+	assert.Equal(t, "1", event.PhotoId)
+	assert.Equal(t, "test event", event.Text)
+	assert.Equal(t, "2025-01-01", event.Date)
+
+	assert.NotEmpty(t, event.ID)
 }
 
 func TestCreateEvent_MethodNotAllowed(t *testing.T) {
@@ -65,6 +78,21 @@ func TestEventHandler_Create_EmptyText_Returns400(t *testing.T) {
 
 	assert.Equal(t, 400, w.Result().StatusCode)
 	assert.Equal(t, string(body), service.ErrEmptyText.Error()+"\n")
+}
+
+func TestEventHandler_Create_EmptyPhoto_Returns400(t *testing.T) {
+	json := `{"photo":"", "text": "some text", "date": "2025-01-01"}`
+	r := httptest.NewRequest("POST", "/events", bytes.NewBuffer([]byte(json)))
+	w := httptest.NewRecorder()
+
+	eventHandler := setup()
+	eventHandler.Create(w, r)
+
+	resp := w.Result()
+	body, _ := io.ReadAll(resp.Body)
+
+	assert.Equal(t, 400, w.Result().StatusCode)
+	assert.Equal(t, string(body), service.ErrEmptyPhoto.Error()+"\n")
 }
 
 func TestEventHandler_Create_InvalidJSON_Returns400(t *testing.T) {
