@@ -20,22 +20,6 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func prepareSchema(t *testing.T, db *sql.DB) {
-	t.Helper()
-
-	_, err := db.Exec(`
-		CREATE TABLE IF NOT EXISTS events (
-			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-			text TEXT NOT NULL,
-			date TEXT NOT NULL,
-			photo TEXT NOT NULL
-		)
-	`)
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
 func newTestDB(t *testing.T) *sql.DB {
 	t.Helper()
 
@@ -61,7 +45,6 @@ func newTestDB(t *testing.T) *sql.DB {
 func TestPostgresEventRepository_Create(t *testing.T) {
 	db := newTestDB(t)
 
-	prepareSchema(t, db)
 	db.Exec("DELETE FROM events")
 	repo := repository.NewPostgresEventRepository(db)
 

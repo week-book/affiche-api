@@ -1,12 +1,10 @@
-.PHONY: test test-db down-db
+.PHONY: test up down
 
-test-db:
-	docker compose up -d db
-	sleep 2
+up:
+	docker compose up -d db migrate
 
-down-db:
-	docker compose down
-
-test: test-db
+test: up
 	go test ./...
 
+down:
+	docker compose down -v

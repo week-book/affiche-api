@@ -1,18 +1,4 @@
 services:
-  api:
-    build: .
-    container_name: affiche-api
-    ports:
-      - "8080:8080"
-    depends_on:
-      - db
-    environment:
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_NAME: ${DB_NAME}
-      restart: unless-stopped
 
   db:
     image: postgres:16-alpine
@@ -26,6 +12,34 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
+
+  migrate:
+    image: migrate/migrate
+    container_name: affiche-migrate
+    depends_on:
+      - db
+    volumes:
+      - ./migrations:/migrations
+    command: [
+      "-path", "/migrations",
+      "-database", "postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?sslmode=disable",
+      "up"
+    ]
+
+  api:
+    build: .
+    container_name: affiche-api
+    ports:
+      - "8080:8080"
+    depends_on:
+      - migrate
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      restart: unless-stopped
 
 volumes:
   pgdata:
