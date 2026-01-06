@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/gorilla/mux"
 	"github.com/week-book/affiche-api/internal/db"
 	"github.com/week-book/affiche-api/internal/http/handler"
 	"github.com/week-book/affiche-api/internal/repository"
@@ -28,10 +29,11 @@ func main() {
 	repo := repository.NewPostgresEventRepository(dbConn)
 	svc := service.NewEventService(repo)
 	h := handler.NewEventHandler(svc)
+	r := mux.NewRouter()
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/events", h.Create)
+	r.HandleFunc("/events", h.Create).Methods(http.MethodPost)
+	r.HandleFunc("/events/{id}", h.GetEvent).Methods(http.MethodGet)
 
 	log.Println("server started on :8080")
-	log.Fatal(http.ListenAndServe(":8080", mux))
+	log.Fatal(http.ListenAndServe(":8080", r))
 }
