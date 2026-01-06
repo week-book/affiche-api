@@ -2,9 +2,12 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/week-book/affiche-api/internal/domain"
+	"github.com/week-book/affiche-api/internal/repository"
 	"github.com/week-book/affiche-api/internal/service"
 )
 
@@ -17,12 +20,6 @@ func NewEventHandler(svc *service.EventService) *EventHandler {
 }
 
 func (h *EventHandler) Create(w http.ResponseWriter, r *http.Request) {
-
-	if r.Method != http.MethodPost {
-		http.Error(w, "An incorrect request method was selected", http.StatusMethodNotAllowed)
-		return
-	}
-
 	event := domain.Event{}
 	decoder := json.NewDecoder(r.Body)
 	defer r.Body.Close()
@@ -51,4 +48,33 @@ func (h *EventHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	w.Write(jsonResponse)
+}
+
+func (h *EventHandler) GetEvent(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	if id == "" {
+		http.Error(w, service.ErrInvalidID.Error(), http.StatusBadRequest)
+		return
+	}
+
+	event, err := h.service.GetByID(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrInvalidID):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		case errors.Is(err, repository.ErrEventNotFound):
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+	}
+
+	json, err := json.Marshal(event)
+	if err != nil {
+		http.Error(w, "Failed to convert response to json format", http.StatusInternalServerError)
+	}
+
+	w.Write(json)
 }
