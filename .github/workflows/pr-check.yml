@@ -8,6 +8,21 @@ jobs:
   ci-checks:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: affiche
+          POSTGRES_PASSWORD: affiche
+          POSTGRES_DB: affiche
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U affiche"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=5
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -17,6 +32,15 @@ jobs:
         with:
           go-version: '1.23'
 
+      - name: Setup migrate
+        run: docker run --rm \
+            --network host \
+            -v ${{ github.workspace }}/migrations:/migrations \
+            migrate/migrate \
+            -path /migrations \
+            -database "postgres://affiche:affiche@postgres:5432/affiche" \
+            up
+
       - name: Run tests
-        run: make test
+        run: go test ./... -v
 
